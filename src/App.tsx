@@ -13,6 +13,7 @@ import EmployeeDashboard from "./pages/employee/EmployeeDashboard";
 import AttendancePage from "./pages/employee/AttendancePage";
 import HistoryPage from "./pages/employee/HistoryPage";
 import ProfilePage from "./pages/ProfilePage";
+import ProtectedRoute from "@/components/layout/ProtectedRoute";
 import ManagerDashboard from "./pages/manager/ManagerDashboard";
 import AllEmployeesPage from "./pages/manager/AllEmployeesPage";
 import TeamCalendarPage from "./pages/manager/TeamCalendarPage";
@@ -58,14 +59,56 @@ const AppRoutes = () => {
       <Route path="/dashboard" element={<DashboardRouter />} />
       
       {/* Employee Routes */}
-      <Route path="/attendance" element={<AttendancePage />} />
-      <Route path="/history" element={<HistoryPage />} />
-      <Route path="/profile" element={<ProfilePage />} />
+      <Route
+        path="/attendance"
+        element={
+          <ProtectedRoute allowedRoles={["employee"]}>
+            <AttendancePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/history"
+        element={
+          <ProtectedRoute allowedRoles={["employee"]}>
+            <HistoryPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <ProfilePage />
+          </ProtectedRoute>
+        }
+      />
       
       {/* Manager Routes */}
-      <Route path="/employees" element={<AllEmployeesPage />} />
-      <Route path="/calendar" element={<TeamCalendarPage />} />
-      <Route path="/reports" element={<ReportsPage />} />
+      <Route
+        path="/employees"
+        element={
+          <ProtectedRoute allowedRoles={["manager"]}>
+            <AllEmployeesPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/calendar"
+        element={
+          <ProtectedRoute allowedRoles={["manager"]}>
+            <TeamCalendarPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/reports"
+        element={
+          <ProtectedRoute allowedRoles={["manager"]}>
+            <ReportsPage />
+          </ProtectedRoute>
+        }
+      />
       
       {/* Catch-all */}
       <Route path="*" element={<NotFound />} />

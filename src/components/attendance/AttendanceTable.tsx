@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { format, parseISO } from 'date-fns';
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -8,6 +10,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Attendance, AttendanceStatus, User } from '@/types';
 
@@ -15,6 +18,7 @@ interface AttendanceTableProps {
   attendance: Attendance[];
   users?: User[];
   showUser?: boolean;
+  pageSize?: number;
 }
 
 const statusConfig: Record<AttendanceStatus, { label: string; className: string }> = {
@@ -24,7 +28,14 @@ const statusConfig: Record<AttendanceStatus, { label: string; className: string 
   'half-day': { label: 'Half Day', className: 'bg-halfday text-halfday-foreground' },
 };
 
-const AttendanceTable = ({ attendance, users, showUser = false }: AttendanceTableProps) => {
+const AttendanceTable = ({ attendance, users, showUser = false, pageSize = 5 }: AttendanceTableProps) => {
+  const [currentPage, setCurrentPage] = useState(1);
+  
+  const totalPages = Math.ceil(attendance.length / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const currentRecords = attendance.slice(startIndex, endIndex);
+
   const getUserName = (userId: string) => {
     return users?.find((u) => u.id === userId)?.name || 'Unknown';
   };
@@ -33,8 +44,18 @@ const AttendanceTable = ({ attendance, users, showUser = false }: AttendanceTabl
     return users?.find((u) => u.id === userId)?.employeeId || '-';
   };
 
+  const goToPage = (page: number) => {
+    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+  };
+
+  const goToFirstPage = () => goToPage(1);
+  const goToLastPage = () => goToPage(totalPages);
+  const goToPreviousPage = () => goToPage(currentPage - 1);
+  const goToNextPage = () => goToPage(currentPage + 1);
+
   return (
-    <div className="rounded-xl border bg-card">
+    <div className="space-y-4">
+      <div className="rounded-xl border bg-card">
       <Table>
         <TableHeader>
           <TableRow className="bg-muted/50">
@@ -62,7 +83,7 @@ const AttendanceTable = ({ attendance, users, showUser = false }: AttendanceTabl
               </TableCell>
             </TableRow>
           ) : (
-            attendance.map((record) => (
+            currentRecords.map((record) => (
               <TableRow key={record.id} className="hover:bg-muted/30">
                 {showUser && (
                   <>
@@ -96,6 +117,62 @@ const AttendanceTable = ({ attendance, users, showUser = false }: AttendanceTabl
           )}
         </TableBody>
       </Table>
+      </div>
+
+      {/* Pagination Controls */}
+      {attendance.length > 0 && (
+        <div className="flex items-center justify-between px-2">
+          <p className="text-sm text-muted-foreground">
+            Showing <span className="font-medium text-foreground">{startIndex + 1}</span> to{' '}
+            <span className="font-medium text-foreground">{Math.min(endIndex, attendance.length)}</span> of{' '}
+            <span className="font-medium text-foreground">{attendance.length}</span> records
+          </p>
+          
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={goToFirstPage}
+              disabled={currentPage === 1}
+            >
+              <ChevronsLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={goToPreviousPage}
+              disabled={currentPage === 1}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            
+            <div className="flex items-center gap-1 px-2">
+              <span className="text-sm font-medium">Page {currentPage} of {totalPages}</span>
+            </div>
+            
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={goToNextPage}
+              disabled={currentPage === totalPages}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={goToLastPage}
+              disabled={currentPage === totalPages}
+            >
+              <ChevronsRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

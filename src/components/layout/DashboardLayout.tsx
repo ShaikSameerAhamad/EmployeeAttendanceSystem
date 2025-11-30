@@ -15,10 +15,10 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen gradient-background">
       <Sidebar />
       <main className="ml-64 min-h-screen">
-        <div className="p-8">{children}</div>
+        <div className="p-6 lg:p-8 max-w-7xl mx-auto">{children}</div>
       </main>
     </div>
   );

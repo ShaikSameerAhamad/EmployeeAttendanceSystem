@@ -84,7 +84,8 @@ const ManagerDashboard = () => {
     );
   }, []);
 
-  const COLORS = ['hsl(221, 83%, 53%)', 'hsl(174, 62%, 47%)', 'hsl(142, 76%, 36%)', 'hsl(38, 92%, 50%)'];
+  // Purple theme colors for charts
+  const COLORS = ['#62339A', '#AE63F0', '#FFD93F', '#22C55E'];
 
   return (
     <DashboardLayout>

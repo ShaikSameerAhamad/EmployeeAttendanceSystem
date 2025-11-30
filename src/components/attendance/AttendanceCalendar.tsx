@@ -1,14 +1,14 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   format,
   startOfMonth,
   endOfMonth,
   eachDayOfInterval,
-  isSameMonth,
   isSameDay,
   addMonths,
   subMonths,
   isWeekend,
+  isAfter,
 } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,8 @@ import { Attendance, AttendanceStatus } from '@/types';
 interface AttendanceCalendarProps {
   attendance: Attendance[];
   onDateClick?: (date: Date, record?: Attendance) => void;
+  month?: Date;
+  onMonthChange?: (month: Date) => void;
 }
 
 const statusColors: Record<AttendanceStatus, string> = {
@@ -28,8 +30,16 @@ const statusColors: Record<AttendanceStatus, string> = {
   'half-day': 'bg-halfday text-halfday-foreground',
 };
 
-const AttendanceCalendar = ({ attendance, onDateClick }: AttendanceCalendarProps) => {
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+const AttendanceCalendar = ({ attendance, onDateClick, month, onMonthChange }: AttendanceCalendarProps) => {
+  const [internalMonth, setInternalMonth] = useState(() => startOfMonth(new Date()));
+
+  useEffect(() => {
+    if (month) {
+      setInternalMonth(startOfMonth(month));
+    }
+  }, [month]);
+
+  const currentMonth = month ? startOfMonth(month) : internalMonth;
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
@@ -39,12 +49,32 @@ const AttendanceCalendar = ({ attendance, onDateClick }: AttendanceCalendarProps
   const firstDayOfWeek = monthStart.getDay();
   const paddingDays = Array.from({ length: firstDayOfWeek }, (_, i) => null);
 
+  const attendanceByDate = useMemo(() => {
+    const map = new Map<string, Attendance>();
+    attendance.forEach((record) => {
+      if (record?.date) {
+        map.set(record.date, record);
+      }
+    });
+    return map;
+  }, [attendance]);
+
   const getAttendanceForDate = (date: Date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
-    return attendance.find((a) => a.date === dateStr);
+    return attendanceByDate.get(dateStr);
   };
 
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+  const handleMonthShift = (direction: 'prev' | 'next') => {
+    const nextMonth = direction === 'prev' ? subMonths(currentMonth, 1) : addMonths(currentMonth, 1);
+
+    if (!month) {
+      setInternalMonth(nextMonth);
+    }
+
+    onMonthChange?.(nextMonth);
+  };
 
   return (
     <Card variant="elevated">
@@ -57,14 +87,14 @@ const AttendanceCalendar = ({ attendance, onDateClick }: AttendanceCalendarProps
             <Button
               variant="outline"
               size="icon"
-              onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
+              onClick={() => handleMonthShift('prev')}
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <Button
               variant="outline"
               size="icon"
-              onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
+              onClick={() => handleMonthShift('next')}
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
@@ -104,25 +134,32 @@ const AttendanceCalendar = ({ attendance, onDateClick }: AttendanceCalendarProps
             const record = getAttendanceForDate(day);
             const isToday = isSameDay(day, new Date());
             const isWeekendDay = isWeekend(day);
-            const isFuture = day > new Date();
+            const isFuture = isAfter(day, new Date());
+            const dateLabel = format(day, 'MMMM d, yyyy');
 
             return (
               <button
                 key={day.toISOString()}
-                onClick={() => onDateClick?.(day, record)}
-                disabled={isFuture || isWeekendDay}
+                onClick={() => !isFuture && onDateClick?.(day, record)}
+                disabled={isFuture}
+                title={record ? `${record.status.toUpperCase()} • ${dateLabel}` : `No record • ${dateLabel}`}
                 className={cn(
-                  'aspect-square rounded-lg p-1 text-sm transition-all duration-200',
+                  'aspect-square rounded-lg p-1 text-sm transition-all duration-200 flex flex-col items-center justify-center gap-1',
                   'hover:scale-105 hover:shadow-md',
-                  'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
-                  isToday && 'ring-2 ring-primary ring-offset-2',
-                  isWeekendDay && 'bg-muted/50 cursor-not-allowed',
-                  isFuture && 'opacity-50 cursor-not-allowed',
+                  'focus:outline-none focus:ring-2 focus:ring-[#AE63F0] focus:ring-offset-2 focus:ring-offset-background',
+                  isToday && 'ring-2 ring-[#AE63F0] ring-offset-2 ring-offset-background',
+                  isWeekendDay && 'bg-muted/40',
+                  isFuture && 'opacity-40 cursor-not-allowed',
                   record && statusColors[record.status],
-                  !record && !isWeekendDay && !isFuture && 'bg-secondary hover:bg-secondary/80'
+                  !record && !isFuture && 'bg-secondary/40 hover:bg-secondary/60'
                 )}
               >
-                <span className="font-medium">{format(day, 'd')}</span>
+                <span className="font-medium leading-none">{format(day, 'd')}</span>
+                {record && (
+                  <span className="text-[10px] font-semibold uppercase tracking-wide">
+                    {record.status.replace('-', ' ')}
+                  </span>
+                )}
               </button>
             );
           })}

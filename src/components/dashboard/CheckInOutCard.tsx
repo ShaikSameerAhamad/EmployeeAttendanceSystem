@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { Clock, LogIn, LogOut } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,47 +6,47 @@ import { Button } from '@/components/ui/button';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { checkIn, checkOut } from '@/store/slices/attendanceSlice';
 import { toast } from '@/hooks/use-toast';
-import { Attendance } from '@/types';
+import { cn } from '@/lib/utils';
 
-const CheckInOutCard = () => {
+interface CheckInOutCardProps {
+  className?: string;
+}
+
+const CheckInOutCard = ({ className }: CheckInOutCardProps) => {
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
   const { todayAttendance } = useAppSelector((state) => state.attendance);
   const [currentTime, setCurrentTime] = useState(new Date());
 
   // Update time every second
-  useState(() => {
+  useEffect(() => {
     const interval = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(interval);
-  });
+  }, []);
 
   const isCheckedIn = !!todayAttendance?.checkInTime && !todayAttendance?.checkOutTime;
   const hasCheckedOut = !!todayAttendance?.checkOutTime;
 
-  const handleCheckIn = () => {
+  const handleCheckIn = async () => {
     const now = new Date();
     const hour = now.getHours();
     const isLate = hour >= 9;
-    
-    const attendance: Attendance = {
-      id: `${user?.id}-${format(now, 'yyyy-MM-dd')}`,
-      userId: user?.id || '',
-      date: format(now, 'yyyy-MM-dd'),
-      checkInTime: format(now, 'HH:mm'),
-      checkOutTime: null,
-      status: isLate ? 'late' : 'present',
-      totalHours: 0,
-      createdAt: now.toISOString(),
-    };
-
-    dispatch(checkIn(attendance));
-    toast({
-      title: "Checked In Successfully!",
-      description: `You checked in at ${format(now, 'hh:mm a')}${isLate ? ' (Late)' : ''}`,
-    });
+    try {
+      await dispatch(checkIn()).unwrap();
+      toast({
+        title: 'Checked In Successfully!',
+        description: `You checked in at ${format(now, 'hh:mm a')}${isLate ? ' (Late)' : ''}`,
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Unable to check in',
+        description: error?.message || 'Please try again in a moment.',
+        variant: 'destructive',
+      });
+    }
   };
 
-  const handleCheckOut = () => {
+  const handleCheckOut = async () => {
     if (!todayAttendance) return;
 
     const now = new Date();
@@ -56,38 +56,44 @@ const CheckInOutCard = () => {
     const totalHours = Math.max(0, currentHour - checkInHour);
     const isHalfDay = totalHours < 5;
 
-    const attendance: Attendance = {
-      ...todayAttendance,
-      checkOutTime: format(now, 'HH:mm'),
-      status: isHalfDay ? 'half-day' : todayAttendance.status,
-      totalHours,
-    };
-
-    dispatch(checkOut(attendance));
-    toast({
-      title: "Checked Out Successfully!",
-      description: `You worked for ${totalHours} hours today.`,
-    });
+    try {
+      await dispatch(checkOut()).unwrap();
+      toast({
+        title: 'Checked Out Successfully!',
+        description: `You worked for ${totalHours} hour${totalHours === 1 ? '' : 's'} today${
+          isHalfDay ? ' (Half Day)' : ''
+        }.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Unable to check out',
+        description: error?.message || 'Please try again in a moment.',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
-    <Card variant="elevated" className="overflow-hidden">
-      <div className="gradient-primary p-1">
-        <CardHeader className="bg-card rounded-t-lg">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Clock className="h-5 w-5 text-primary" />
-            Quick Check In/Out
-          </CardTitle>
-        </CardHeader>
-      </div>
-      <CardContent className="pt-6">
-        <div className="text-center space-y-6">
+    <Card
+      variant="elevated"
+      className={cn('overflow-hidden glass-effect flex h-full flex-col', className)}
+    >
+      <CardHeader className="border-b border-border/30">
+        <CardTitle className="flex items-center gap-2 text-lg text-white">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-primary-purple purple-glow">
+            <Clock className="h-5 w-5 text-white" />
+          </div>
+          Quick Check In/Out
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="flex-1 pt-6">
+        <div className="flex h-full flex-col gap-6 text-center">
           {/* Current Time Display */}
           <div className="space-y-1">
-            <p className="text-4xl font-bold tracking-tight">
+            <p className="text-5xl font-bold tracking-tight text-white">
               {format(currentTime, 'hh:mm:ss')}
             </p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-white/70">
               {format(currentTime, 'EEEE, MMMM d, yyyy')}
             </p>
           </div>
@@ -116,34 +122,36 @@ const CheckInOutCard = () => {
           </div>
 
           {/* Action Button */}
-          {!hasCheckedOut && (
-            <Button
-              variant={isCheckedIn ? 'checkout' : 'checkin'}
-              size="xl"
-              className="w-full"
-              onClick={isCheckedIn ? handleCheckOut : handleCheckIn}
-            >
-              {isCheckedIn ? (
-                <>
-                  <LogOut className="h-5 w-5" />
-                  Check Out
-                </>
-              ) : (
-                <>
-                  <LogIn className="h-5 w-5" />
-                  Check In
-                </>
-              )}
-            </Button>
-          )}
+          <div className="mt-auto space-y-4">
+            {!hasCheckedOut && (
+              <Button
+                variant={isCheckedIn ? 'checkout' : 'checkin'}
+                size="xl"
+                className="w-full"
+                onClick={isCheckedIn ? handleCheckOut : handleCheckIn}
+              >
+                {isCheckedIn ? (
+                  <>
+                    <LogOut className="h-5 w-5" />
+                    Check Out
+                  </>
+                ) : (
+                  <>
+                    <LogIn className="h-5 w-5" />
+                    Check In
+                  </>
+                )}
+              </Button>
+            )}
 
-          {hasCheckedOut && (
-            <div className="rounded-lg bg-success/10 p-4">
-              <p className="text-success font-medium">
-                Great job! See you tomorrow 👋
-              </p>
-            </div>
-          )}
+            {hasCheckedOut && (
+              <div className="rounded-lg bg-success/10 p-4">
+                <p className="text-success font-medium">
+                  Great job! See you tomorrow 👋
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>

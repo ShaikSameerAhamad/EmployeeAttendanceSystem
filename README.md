@@ -9,6 +9,12 @@ A modern, full-featured employee attendance tracking system built with React + R
 
 ## 🖼️ Screenshots
 
+<div align="center">
+   <img src="https://placehold.co/1200x650?text=Login+%26+Registration" alt="Authentication screens" />
+   <img src="https://placehold.co/1200x650?text=Employee+Dashboard" alt="Employee dashboard preview" />
+   <img src="https://placehold.co/1200x650?text=Manager+Reports" alt="Manager reports preview" />
+</div>
+
 ### Login Page
 - Clean, modern authentication interface
 - Support for both login and registration
@@ -182,6 +188,10 @@ bun run dev
 - `/history` - View attendance history with calendar
 - `/profile` - View profile information
 
+#### Mark Attendance Entry Point
+- Employees can mark attendance from the **Attendance** page (`/attendance`).
+- The page is pinned in the sidebar under the Employee section for quick access immediately after login.
+
 ### Manager Pages
 - `/dashboard` - Team overview with charts
 - `/employees` - All employees attendance with filters
@@ -190,15 +200,27 @@ bun run dev
 
 ## 🔧 Environment Variables
 
-Create a `.env` file in the root directory:
+Use the bundled `.env.example` as the source of truth. Copy it to `.env` in the project root and fill in the values below (and do the same inside `/backend` if you keep separate env files):
+
+**Frontend (Vite)**
 
 ```env
-# No environment variables required for the current frontend-only version
-# Backend integration will require:
-# VITE_API_URL=your_api_url
-# VITE_SUPABASE_URL=your_supabase_url
-# VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_API_URL=http://localhost:5000/api
+VITE_APP_NAME=AttendEase
+VITE_APP_ENV=development
 ```
+
+**Backend (Express)**
+
+```env
+MONGODB_URI=mongodb://localhost:27017/attendance_system
+JWT_SECRET=change_me
+PORT=5000
+FRONTEND_URL=http://localhost:5173
+NODE_ENV=development
+```
+
+Optional Supabase/Lovable Cloud credentials are still supported—leave them blank if you do not use that deployment path.
 
 ## 📝 API Endpoints (For Backend Integration)
 
@@ -225,14 +247,52 @@ Create a `.env` file in the root directory:
 - `GET /api/dashboard/employee` - Employee stats
 - `GET /api/dashboard/manager` - Manager stats
 
-## 🚀 Deployment
+## 🚀 Quick Setup & Deployment
 
-The application can be deployed using Lovable's built-in deployment:
+### Local Setup
 
-1. Click **Share** → **Publish** in the Lovable editor
-2. Your app will be deployed to a `.lovable.app` domain
+1. **Backend Setup:**
+   ```bash
+   cd backend
+   npm install
+   # Create .env file with:
+   # MONGODB_URI=mongodb://localhost:27017/attendance_system
+   # JWT_SECRET=your_secret_key
+   # PORT=5000
+   # FRONTEND_URL=http://localhost:8080
+   npm run seed  # Seed sample data
+   npm start
+   ```
 
-## 🤝 Contributing
+2. **Frontend Setup:**
+   ```bash
+   npm install
+   # Create .env file with:
+   # VITE_API_URL=http://localhost:5000/api
+   npm run dev
+   ```
+
+### Deployment Options
+
+**Option 1: Vercel (Frontend) + Railway/Render (Backend)**
+- Frontend: Deploy to Vercel (free)
+- Backend: Deploy to Railway or Render (free tier available)
+- Database: MongoDB Atlas (free)
+
+**Option 2: Netlify (Frontend) + Heroku (Backend)**
+- Frontend: Deploy to Netlify
+- Backend: Deploy to Heroku
+- Database: MongoDB Atlas
+
+**Option 3: Full Stack on Render**
+- Deploy both frontend and backend on Render
+- Use MongoDB Atlas for database
+
+## � Testing & Quality
+
+Automated tests are not yet in place. See [`TESTING.md`](./TESTING.md) for the current gap analysis and a prioritized plan for adding backend, frontend, and end-to-end coverage.
+
+## �🤝 Contributing
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/AmazingFeature`)

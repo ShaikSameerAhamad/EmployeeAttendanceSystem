@@ -14,7 +14,12 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['-apple-system', 'BlinkMacSystemFont', 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'],
+      },
+      fontWeight: {
+        regular: '400',
+        medium: '500',
+        semibold: '600',
       },
       colors: {
         border: "hsl(var(--border))",

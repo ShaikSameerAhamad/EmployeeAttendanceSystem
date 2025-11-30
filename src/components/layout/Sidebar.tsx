@@ -42,34 +42,34 @@ const Sidebar = () => {
   const links = user?.role === 'manager' ? managerLinks : employeeLinks;
 
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-sidebar text-sidebar-foreground">
+    <aside className="fixed left-0 top-0 z-40 h-screen w-64 text-sidebar-foreground border-r border-sidebar-border shadow-2xl backdrop-blur-xl" style={{ background: 'linear-gradient(180deg, #0B0910 0%, #1a1330 100%)' }}>
       <div className="flex h-full flex-col">
         {/* Logo */}
-        <div className="flex h-20 items-center gap-3 border-b border-sidebar-border px-6">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sidebar-primary">
-            <CheckCircle className="h-6 w-6 text-sidebar-primary-foreground" />
+        <div className="flex h-20 items-center gap-3 border-b border-sidebar-border/30 px-6" style={{ background: 'linear-gradient(135deg, rgba(174, 99, 240, 0.12) 0%, rgba(98, 51, 154, 0.06) 100%)' }}>
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl gradient-primary-purple shadow-lg purple-glow">
+            <CheckCircle className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-sidebar-foreground">AttendEase</h1>
-            <p className="text-xs text-sidebar-foreground/60">Attendance System</p>
+            <h1 className="text-lg font-semibold text-white tracking-tight">AttendEase</h1>
+            <p className="text-xs text-white/70 font-medium">Attendance System</p>
           </div>
         </div>
 
         {/* User Info */}
-        <div className="border-b border-sidebar-border p-4">
-          <div className="flex items-center gap-3 rounded-lg bg-sidebar-accent p-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sidebar-primary text-sidebar-primary-foreground font-semibold">
+        <div className="border-b border-sidebar-border/30 p-4" style={{ background: 'linear-gradient(135deg, rgba(174, 99, 240, 0.1) 0%, rgba(98, 51, 154, 0.05) 100%)' }}>
+          <div className="flex items-center gap-3 rounded-xl backdrop-blur-sm p-3 border border-sidebar-border/30 shadow-lg" style={{ background: 'linear-gradient(135deg, rgba(174, 99, 240, 0.18) 0%, rgba(98, 51, 154, 0.12) 100%)' }}>
+            <div className="flex h-11 w-11 items-center justify-center rounded-full gradient-primary-purple text-white font-semibold text-sm shadow-lg purple-glow-subtle">
               {user?.name?.charAt(0) || 'U'}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{user?.name}</p>
-              <p className="text-xs text-sidebar-foreground/60 capitalize">{user?.role}</p>
+              <p className="text-sm font-semibold truncate text-white">{user?.name}</p>
+              <p className="text-xs text-white/70 capitalize font-medium">{user?.role} • {user?.employeeId}</p>
             </div>
           </div>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 space-y-1 p-4">
+        <nav className="flex-1 space-y-1.5 p-4 overflow-y-auto">
           {links.map((link) => {
             const isActive = location.pathname === link.to;
             return (
@@ -77,13 +77,16 @@ const Sidebar = () => {
                 key={link.to}
                 to={link.to}
                 className={cn(
-                  'flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-all duration-200',
+                  'flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-300 group',
                   isActive
-                    ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-lg'
-                    : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground'
+                    ? 'gradient-primary-purple text-white shadow-lg purple-glow scale-[1.02]'
+                    : 'text-white/80 hover:bg-white/10 hover:text-white hover:translate-x-1'
                 )}
               >
-                <link.icon className="h-5 w-5" />
+                <link.icon className={cn(
+                  'h-5 w-5 transition-transform duration-300',
+                  isActive ? 'scale-110' : 'group-hover:scale-110'
+                )} />
                 {link.label}
               </NavLink>
             );
@@ -91,12 +94,12 @@ const Sidebar = () => {
         </nav>
 
         {/* Logout */}
-        <div className="border-t border-sidebar-border p-4">
+        <div className="border-t border-sidebar-border/30 p-4" style={{ background: 'linear-gradient(135deg, rgba(174, 99, 240, 0.1) 0%, rgba(98, 51, 154, 0.05) 100%)' }}>
           <button
             onClick={handleLogout}
-            className="flex w-full items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium text-sidebar-foreground/70 transition-all duration-200 hover:bg-destructive/20 hover:text-destructive"
+            className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-white/80 transition-all duration-300 hover:bg-destructive/20 hover:text-destructive hover:translate-x-1 group"
           >
-            <LogOut className="h-5 w-5" />
+            <LogOut className="h-5 w-5 transition-transform duration-300 group-hover:scale-110" />
             Logout
           </button>
         </div>

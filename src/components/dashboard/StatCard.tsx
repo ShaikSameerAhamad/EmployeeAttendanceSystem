@@ -24,45 +24,50 @@ const StatCard = ({
   className,
 }: StatCardProps) => {
   const variantStyles = {
-    default: 'bg-card border-border',
-    success: 'bg-success/10 border-success/30',
-    warning: 'bg-warning/10 border-warning/30',
-    destructive: 'bg-destructive/10 border-destructive/30',
-    primary: 'bg-primary/10 border-primary/30',
+    default: 'border-border/50',
+    success: 'border-success/30',
+    warning: 'border-warning/30',
+    destructive: 'border-destructive/30',
+    primary: 'border-primary/30',
   };
 
   const iconStyles = {
-    default: 'bg-secondary text-secondary-foreground',
-    success: 'bg-success text-success-foreground',
-    warning: 'bg-warning text-warning-foreground',
-    destructive: 'bg-destructive text-destructive-foreground',
-    primary: 'bg-primary text-primary-foreground',
+    default: 'bg-gradient-to-br from-[#AE63F0]/20 to-[#62339A]/20 text-[#AE63F0] border border-[#AE63F0]/30',
+    success: 'bg-success/20 text-success border border-success/30',
+    warning: 'bg-[#FFD93F]/20 text-[#FFD93F] border border-[#FFD93F]/30',
+    destructive: 'bg-destructive/20 text-destructive border border-destructive/30',
+    primary: 'gradient-primary-purple text-white border border-[#62339A]/30 purple-glow',
   };
 
   return (
     <div
       className={cn(
-        'stat-card border',
+        'stat-card border group relative overflow-hidden',
         variantStyles[variant],
         className
       )}
     >
-      <div className="flex items-start justify-between">
-        <div className="space-y-2">
-          <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          <p className="text-3xl font-bold tracking-tight">{value}</p>
+      <div className="absolute inset-0 bg-gradient-to-br from-white/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+      <div className="relative flex items-start justify-between">
+        <div className="space-y-3 flex-1">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{title}</p>
+          <p className="text-4xl font-bold tracking-tight text-white">
+            {value}
+          </p>
           {subtitle && (
-            <p className="text-sm text-muted-foreground">{subtitle}</p>
+            <p className="text-sm font-medium text-muted-foreground">{subtitle}</p>
           )}
           {trend && (
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-2 pt-1">
               <span
                 className={cn(
-                  'text-sm font-medium',
-                  trend.isPositive ? 'text-success' : 'text-destructive'
+                  'text-sm font-semibold px-2 py-0.5 rounded-md',
+                  trend.isPositive 
+                    ? 'text-success bg-success/10' 
+                    : 'text-destructive bg-destructive/10'
                 )}
               >
-                {trend.isPositive ? '+' : ''}{trend.value}%
+                {trend.isPositive ? '↑' : '↓'} {trend.isPositive ? '+' : ''}{trend.value}%
               </span>
               <span className="text-xs text-muted-foreground">vs last month</span>
             </div>
@@ -70,7 +75,7 @@ const StatCard = ({
         </div>
         <div
           className={cn(
-            'flex h-12 w-12 items-center justify-center rounded-xl',
+            'flex h-14 w-14 items-center justify-center rounded-2xl shadow-xl transition-transform duration-300 group-hover:scale-110 backdrop-blur-sm',
             iconStyles[variant]
           )}
         >

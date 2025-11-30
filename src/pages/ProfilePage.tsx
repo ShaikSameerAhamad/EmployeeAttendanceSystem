@@ -1,12 +1,33 @@
+import { useEffect } from 'react';
 import { User, Mail, Building, IdCard, Calendar, Shield } from 'lucide-react';
 import { format } from 'date-fns';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useAppSelector } from '@/store/hooks';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { fetchCurrentUser } from '@/store/slices/authSlice';
 
 const ProfilePage = () => {
-  const { user } = useAppSelector((state) => state.auth);
+  const dispatch = useAppDispatch();
+  const { user, isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
+
+  useEffect(() => {
+    if (!user && isAuthenticated) {
+      dispatch(fetchCurrentUser());
+    }
+  }, [user, isAuthenticated, dispatch]);
+
+  if (!user) {
+    return (
+      <DashboardLayout>
+        <div className="flex h-full items-center justify-center py-20">
+          <p className="text-muted-foreground">
+            {isLoading ? 'Loading profile...' : 'No profile data available.'}
+          </p>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -24,16 +45,16 @@ const ProfilePage = () => {
           <CardHeader className="pb-4">
             <div className="flex items-center gap-4">
               <div className="h-20 w-20 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-3xl font-bold">
-                {user?.name?.charAt(0)}
+                {user.name?.charAt(0)}
               </div>
               <div>
-                <CardTitle className="text-2xl">{user?.name}</CardTitle>
+                <CardTitle className="text-2xl">{user.name}</CardTitle>
                 <CardDescription className="flex items-center gap-2 mt-1">
                   <Badge variant="secondary" className="capitalize">
-                    {user?.role}
+                    {user.role}
                   </Badge>
                   <span>•</span>
-                  <span>{user?.department}</span>
+                  <span>{user.department}</span>
                 </CardDescription>
               </div>
             </div>
@@ -46,7 +67,7 @@ const ProfilePage = () => {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Employee ID</p>
-                  <p className="font-semibold font-mono">{user?.employeeId}</p>
+                  <p className="font-semibold font-mono">{user.employeeId}</p>
                 </div>
               </div>
 
@@ -56,7 +77,7 @@ const ProfilePage = () => {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Email</p>
-                  <p className="font-semibold">{user?.email}</p>
+                  <p className="font-semibold">{user.email}</p>
                 </div>
               </div>
 
@@ -66,7 +87,7 @@ const ProfilePage = () => {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Department</p>
-                  <p className="font-semibold">{user?.department}</p>
+                  <p className="font-semibold">{user.department}</p>
                 </div>
               </div>
 
@@ -76,7 +97,7 @@ const ProfilePage = () => {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Role</p>
-                  <p className="font-semibold capitalize">{user?.role}</p>
+                  <p className="font-semibold capitalize">{user.role}</p>
                 </div>
               </div>
 
@@ -87,7 +108,7 @@ const ProfilePage = () => {
                 <div>
                   <p className="text-sm text-muted-foreground">Member Since</p>
                   <p className="font-semibold">
-                    {user?.createdAt ? format(new Date(user.createdAt), 'MMMM d, yyyy') : '-'}
+                    {user.createdAt ? format(new Date(user.createdAt), 'MMMM d, yyyy') : '-'}
                   </p>
                 </div>
               </div>

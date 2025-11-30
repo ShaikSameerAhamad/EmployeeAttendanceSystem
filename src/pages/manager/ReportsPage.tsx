@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react';
-import { format, subDays, parseISO } from 'date-fns';
-import { FileText, Download, Filter, BarChart3 } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { format, subDays } from 'date-fns';
+import { FileText, Download, Filter, BarChart3, Loader2 } from 'lucide-react';
 import {
   BarChart,
   Bar,
@@ -18,45 +18,111 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { mockUsers, mockAttendance } from '@/data/mockData';
 import { toast } from '@/hooks/use-toast';
+import { managerAttendanceAPI } from '@/services/api';
+import { Attendance, User } from '@/types';
+
+const convertToCSV = (rows: Record<string, any>[]) => {
+  if (!rows.length) return '';
+
+  const headers = Object.keys(rows[0]);
+  const escapeValue = (value: unknown) => {
+    if (value === null || value === undefined) return '';
+    const stringValue = String(value).replace(/"/g, '""');
+    return /[",\n]/.test(stringValue) ? `"${stringValue}"` : stringValue;
+  };
+
+  const csvRows = [
+    headers.join(','),
+    ...rows.map((row) => headers.map((header) => escapeValue(row[header])).join(',')),
+  ];
+
+  return csvRows.join('\n');
+};
+
+const triggerDownload = (content: string, filename: string) => {
+  const blob = new Blob([content], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(url);
+};
 
 const ReportsPage = () => {
   const [startDate, setStartDate] = useState(format(subDays(new Date(), 30), 'yyyy-MM-dd'));
   const [endDate, setEndDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [selectedEmployee, setSelectedEmployee] = useState<string>('all');
+  const [attendanceData, setAttendanceData] = useState<Attendance[]>([]);
+  const [employees, setEmployees] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
-  const employees = mockUsers.filter((u) => u.role === 'employee');
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      try {
+        const data = await managerAttendanceAPI.getTodayStatus();
+        if (data.success) {
+          const allEmps = [...data.data.presentEmployees, ...data.data.absentEmployees];
+          const normalized = allEmps.map((emp) => ({
+            ...emp,
+            id: emp.id || emp._id || emp.employeeId || emp.email,
+          }));
+          const uniqueEmps = Array.from(new Map(normalized.map((item) => [item.id, item])).values());
+          setEmployees(uniqueEmps as User[]);
+        }
+      } catch (error) {
+        console.error('Failed to fetch employees', error);
+      }
+    };
+    fetchEmployees();
+  }, []);
 
-  const filteredData = useMemo(() => {
-    let filtered = mockAttendance.filter((a) => {
-      const date = parseISO(a.date);
-      return date >= parseISO(startDate) && date <= parseISO(endDate);
-    });
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const data = await managerAttendanceAPI.getAll({
+          employeeId: selectedEmployee === 'all' ? undefined : selectedEmployee,
+          startDate,
+          endDate,
+        });
 
-    if (selectedEmployee !== 'all') {
-      filtered = filtered.filter((a) => a.userId === selectedEmployee);
-    }
+        if (data.success) {
+          setAttendanceData(data.data);
+        }
+      } catch (error) {
+        toast({
+          title: 'Failed to fetch data',
+          description: 'Could not load attendance records.',
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-    return filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    fetchData();
   }, [startDate, endDate, selectedEmployee]);
 
   const summaryStats = useMemo(() => {
     const stats = {
-      present: filteredData.filter((a) => a.status === 'present').length,
-      absent: filteredData.filter((a) => a.status === 'absent').length,
-      late: filteredData.filter((a) => a.status === 'late').length,
-      halfDay: filteredData.filter((a) => a.status === 'half-day').length,
-      totalHours: filteredData.reduce((sum, a) => sum + a.totalHours, 0),
+      present: attendanceData.filter((a) => a.status === 'present').length,
+      absent: attendanceData.filter((a) => a.status === 'absent').length,
+      late: attendanceData.filter((a) => a.status === 'late').length,
+      halfDay: attendanceData.filter((a) => a.status === 'half-day').length,
+      totalHours: attendanceData.reduce((sum, a) => sum + (a.totalHours || 0), 0),
     };
     return stats;
-  }, [filteredData]);
+  }, [attendanceData]);
 
   const chartData = useMemo(() => {
     const dataByEmployee: Record<string, { present: number; absent: number; late: number; halfDay: number }> = {};
 
-    filteredData.forEach((record) => {
-      const employee = employees.find((e) => e.id === record.userId);
+    attendanceData.forEach((record) => {
+      // record.userId is populated, so it should be an object
+      const employee = record.userId as unknown as User;
       const name = employee?.name || 'Unknown';
 
       if (!dataByEmployee[name]) {
@@ -70,49 +136,62 @@ const ReportsPage = () => {
     });
 
     return Object.entries(dataByEmployee).map(([name, stats]) => ({
-      name: name.split(' ')[0], // First name only for chart
+      name: name.split(' ')[0],
       ...stats,
     }));
-  }, [filteredData, employees]);
+  }, [attendanceData]);
 
-  const exportToCSV = () => {
-    if (filteredData.length === 0) {
+  const handleExport = async () => {
+    if (new Date(startDate) > new Date(endDate)) {
       toast({
-        title: 'No data to export',
-        description: 'Please adjust your filters to include some records.',
+        title: 'Invalid date range',
+        description: 'Start date must be before end date.',
         variant: 'destructive',
       });
       return;
     }
 
-    const headers = ['Employee ID', 'Name', 'Department', 'Date', 'Check In', 'Check Out', 'Total Hours', 'Status'];
-    const rows = filteredData.map((record) => {
-      const user = employees.find((u) => u.id === record.userId);
-      return [
-        user?.employeeId || '-',
-        user?.name || '-',
-        user?.department || '-',
-        record.date,
-        record.checkInTime || '-',
-        record.checkOutTime || '-',
-        record.totalHours.toString(),
-        record.status,
-      ];
-    });
+    setIsExporting(true);
+    try {
+      const data = await managerAttendanceAPI.exportAttendance(
+        startDate,
+        endDate,
+        selectedEmployee === 'all' ? undefined : selectedEmployee
+      );
 
-    const csvContent = [headers, ...rows].map((row) => row.join(',')).join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `attendance-report-${startDate}-to-${endDate}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+      if (!data.success) {
+        throw new Error('Export failed');
+      }
 
-    toast({
-      title: 'Report exported successfully',
-      description: `${filteredData.length} records exported to CSV.`,
-    });
+      const records = data.data;
+      if (!records.length) {
+        toast({
+          title: 'No data to export',
+          description: 'Try loosening your filters and try again.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const csvContent = convertToCSV(records);
+      const filename = `attendance-${startDate}-to-${endDate}${
+        selectedEmployee !== 'all' ? `-${selectedEmployee}` : ''
+      }.csv`;
+      triggerDownload(csvContent, filename);
+
+      toast({
+        title: 'Report exported',
+        description: `${records.length} record${records.length === 1 ? '' : 's'} saved to CSV.`,
+      });
+    } catch (error) {
+      toast({
+        title: 'Export failed',
+        description: 'Could not export attendance report.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   return (
@@ -126,9 +205,13 @@ const ReportsPage = () => {
               Generate and export detailed attendance reports
             </p>
           </div>
-          <Button onClick={exportToCSV} size="lg" className="w-fit">
-            <Download className="h-4 w-4 mr-2" />
-            Export Report (CSV)
+          <Button onClick={handleExport} size="lg" className="w-fit" disabled={isExporting}>
+            {isExporting ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4 mr-2" />
+            )}
+            {isExporting ? 'Preparing CSV…' : 'Export Report (CSV)'}
           </Button>
         </div>
 
@@ -173,11 +256,14 @@ const ReportsPage = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Employees</SelectItem>
-                    {employees.map((emp) => (
-                      <SelectItem key={emp.id} value={emp.id}>
-                        {emp.name} ({emp.employeeId})
-                      </SelectItem>
-                    ))}
+                    {employees.map((emp) => {
+                      const value = emp.employeeId || emp.id;
+                      return (
+                        <SelectItem key={emp.id} value={value}>
+                          {emp.name} ({emp.employeeId || 'N/A'})
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>
@@ -185,7 +271,7 @@ const ReportsPage = () => {
               <div className="flex items-end">
                 <div className="rounded-lg bg-primary/10 px-4 py-2 w-full text-center">
                   <p className="text-sm text-muted-foreground">Records Found</p>
-                  <p className="text-2xl font-bold text-primary">{filteredData.length}</p>
+                  <p className="text-2xl font-bold text-primary">{attendanceData.length}</p>
                 </div>
               </div>
             </div>
@@ -272,7 +358,7 @@ const ReportsPage = () => {
             </CardHeader>
             <CardContent>
               <AttendanceTable
-                attendance={filteredData}
+                attendance={attendanceData}
                 users={employees}
                 showUser={selectedEmployee === 'all'}
               />
