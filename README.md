@@ -279,26 +279,6 @@ Optional Supabase credentials are supported for managed hosting—leave them bla
    npm run dev
    ```
 
-### Deployment Options
-
-**Option 1: Vercel (Frontend) + Railway/Render (Backend)**
-- Frontend: Deploy to Vercel (free)
-- Backend: Deploy to Railway or Render (free tier available)
-- Database: MongoDB Atlas (free)
-
-**Option 2: Netlify (Frontend) + Heroku (Backend)**
-- Frontend: Deploy to Netlify
-- Backend: Deploy to Heroku
-- Database: MongoDB Atlas
-
-**Option 3: Full Stack on Render**
-- Deploy both frontend and backend on Render
-- Use MongoDB Atlas for database
-
-## � Testing & Quality
-
-Automated tests are not yet in place. See [`TESTING.md`](./TESTING.md) for the current gap analysis and a prioritized plan for adding backend, frontend, and end-to-end coverage.
-
 ## �🤝 Contributing
 
 1. Fork the repository
