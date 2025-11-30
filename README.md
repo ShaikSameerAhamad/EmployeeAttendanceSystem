@@ -2,6 +2,8 @@
 
 A modern, full-featured employee attendance tracking system built with React + Redux Toolkit. This application provides comprehensive attendance management for both employees and managers with an intuitive, beautiful UI.
 
+🌐 **Live Demo:** [https://employeeattendancesystem-e8xs.onrender.com](https://employeeattendancesystem-e8xs.onrender.com)
+
 ![AttendEase](https://img.shields.io/badge/version-1.0.0-blue.svg)
 ![React](https://img.shields.io/badge/React-18.3-61DAFB.svg)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6.svg)
@@ -10,9 +12,14 @@ A modern, full-featured employee attendance tracking system built with React + R
 ## 🖼️ Screenshots
 
 <div align="center">
-   <img src="https://placehold.co/1200x650?text=Login+%26+Registration" alt="Authentication screens" />
-   <img src="https://placehold.co/1200x650?text=Employee+Dashboard" alt="Employee dashboard preview" />
-   <img src="https://placehold.co/1200x650?text=Manager+Reports" alt="Manager reports preview" />
+  <img src="./images/loginpage.png" alt="Login Page" width="800" />
+  <p><em>Login & Registration</em></p>
+  
+  <img src="./images/employeedashboard.png" alt="Employee Dashboard" width="800" />
+  <p><em>Employee Dashboard</em></p>
+  
+  <img src="./images/managerdashboard.png" alt="Manager Dashboard" width="800" />
+  <p><em>Manager Dashboard</em></p>
 </div>
 
 ### Login Page
