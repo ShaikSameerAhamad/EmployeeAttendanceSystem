@@ -220,7 +220,7 @@ FRONTEND_URL=http://localhost:5173
 NODE_ENV=development
 ```
 
-Optional Supabase/Lovable Cloud credentials are still supported—leave them blank if you do not use that deployment path.
+Optional Supabase credentials are supported for managed hosting—leave them blank if you do not use that deployment path.
 
 ## 📝 API Endpoints (For Backend Integration)
 
@@ -302,7 +302,7 @@ Automated tests are not yet in place. See [`TESTING.md`](./TESTING.md) for the c
 
 ## 📄 License
 
-This project is built with Lovable.
+MIT
 
 ## 🙏 Acknowledgments
 
